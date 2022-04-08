@@ -4,9 +4,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using Comfort.Common;
 using EFT;
-using Aki.Reflection.Utils;
-using System.Reflection;
-using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RGBLasers
@@ -25,6 +23,8 @@ namespace RGBLasers
 
         private void Awake()
         {
+            new LaserBeamPatch().Enable(); // Enable the Harmony patch.
+
             logger = Logger;
 
             // Plugin startup logic
@@ -45,43 +45,33 @@ namespace RGBLasers
     {
         public bool IsInWorld() => Singleton<GameWorld>.Instance != null;
 
-        private Light[] points;
-        private LaserBeam[] beams;
-
-        private bool IsSameColor(float r1, float g1, float b1, float r2, float g2, float b2)
-        {
-            if (r1 == r2 && g1 == g2 && b1 == b2)
-            {
-                return true;
-            }
-
-            return false;
-        }
+        public static List<Light> points = new List<Light>();
+        public static List<LaserBeam> beams = new List<LaserBeam>();
 
         public void Render(Color c)
         {
-            var points = this.points;
-            var beams = this.beams;
-
             // No lasers to render, ignore this call.
-            if (points == null || beams == null)
+            if (points == null || beams == null || points.Count == 0 || beams.Count == 0)
             {
                 return;
             }
 
-            var lights = points.Where(l => l.name == "laserBeamLight");
-            var laserbeams = beams;
+            // Remove outdated references.
+            points.RemoveAll(p => p == null);
+            beams.RemoveAll(b => b == null);
 
-            foreach (var _laser in lights)
+            foreach (var point in points)
             {
-                var laser = _laser.GetComponent<Light>();
-                laser.color = c;
-                laser.enabled = true;
+                if (point == null) { points.Remove(point); continue; } // Remove point if it no longer exists, and skip it.
+
+                point.color = c;
+                point.enabled = true;
             }
 
-            foreach (var _beam in laserbeams)
+            foreach (var beam in beams)
             {
-                var beam = _beam.GetComponent<LaserBeam>();
+                if (beam == null) { beams.Remove(beam); continue; } // Remove beam if it no longer exists, and skip it.
+
                 beam.LightColor = c;
                 beam.PointMaterial.color = c;
                 beam.BeamMaterial.color = c;
@@ -93,18 +83,9 @@ namespace RGBLasers
         {
             if (IsInWorld())
             {
-                var laser_object = GameObject.Find("laserBeamLight");
-
                 // At least one laser is active.
-                if (laser_object != null)
+                if (beams.Count >= 1)
                 {
-                    if (this.points == null || this.beams == null)
-                    {
-                        RGBLasersPlugin.logger.LogInfo("Got new light objects.");
-                        this.points = Resources.FindObjectsOfTypeAll(typeof(Light)) as Light[];
-                        this.beams = Resources.FindObjectsOfTypeAll(typeof(LaserBeam)) as LaserBeam[];
-                    }
-
                     if (RGBLasersPlugin.Rainbow.Value)
                     {
                         Render(HSBColor.ToColor(new HSBColor(Mathf.PingPong(Time.time * RGBLasersPlugin.RainbowSpeed.Value, 1), 1, 1)));
@@ -112,16 +93,6 @@ namespace RGBLasers
                     else
                     {
                         Render(new Color(RGBLasersPlugin.Red.Value, RGBLasersPlugin.Green.Value, RGBLasersPlugin.Blue.Value));
-                    }
-                }
-                else
-                {
-                    if (this.points != null || this.beams != null)
-                    {
-                        RGBLasersPlugin.logger.LogInfo("Clearing old light objects.");
-
-                        this.points = null;
-                        this.beams = null;
                     }
                 }
             }
