@@ -5,7 +5,6 @@ using BepInEx.Logging;
 using Comfort.Common;
 using EFT;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RGBLasers
 {
@@ -72,7 +71,7 @@ namespace RGBLasers
             {
                 if (beam == null) { beams.Remove(beam); continue; } // Remove beam if it no longer exists, and skip it.
 
-                beam.LightColor = c;
+                // beam.LightColor = c;
                 beam.PointMaterial.color = c;
                 beam.BeamMaterial.color = c;
                 beam.LightIntensity = 10f;
