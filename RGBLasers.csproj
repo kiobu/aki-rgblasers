@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>RGBLasers</AssemblyName>
     <Description>Allows full RGB modification of laser sights.</Description>
-    <Version>1.0.0</Version>
+    <Version>1.2.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -24,11 +24,11 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\Shared\Hollowed\Assembly-CSharp.dll</HintPath>
-    </Reference>
     <Reference Include="Comfort">
       <HintPath>..\Shared\Managed\Comfort.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\Modules\project\Shared\Hollowed\hollowed.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\Shared\Managed\UnityEngine.dll</HintPath>

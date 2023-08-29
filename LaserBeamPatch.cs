@@ -12,10 +12,12 @@ namespace RGBLasers
         }
 
         [PatchPostfix]
-        public static void PatchPostfix(ref Light ___light_0, ref LaserBeam __instance)
+        public static void PatchPostfix(ref Light ___light_0, ref LaserBeam __instance, ref Mesh ___mesh_0, ref Mesh ___mesh_1)
         {
             RGBLaserInjector.points.Add(___light_0);
             RGBLaserInjector.beams.Add(__instance);
+            RGBLaserInjector.pointMeshes.Add(___mesh_0);
+            RGBLaserInjector.beamMeshes.Add(___mesh_1);
         }
     }
 }
