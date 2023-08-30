@@ -18,6 +18,16 @@ namespace RGBLasers
             RGBLaserInjector.beams.Add(__instance);
             RGBLaserInjector.pointMeshes.Add(___mesh_0);
             RGBLaserInjector.beamMeshes.Add(___mesh_1);
+
+            if (!RGBLaserInjector.cachedBeamMesh)
+            {
+                RGBLaserInjector.cachedBeamMesh = Object.Instantiate(___mesh_1);
+            }
+
+            if (!RGBLaserInjector.cachedPointMesh)
+            {
+                RGBLaserInjector.cachedPointMesh = Object.Instantiate(___mesh_0);
+            }
         }
     }
 }

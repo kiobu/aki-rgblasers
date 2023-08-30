@@ -18,11 +18,11 @@ namespace RGBLasers
         internal static ConfigEntry<bool>  Rainbow;
         internal static ConfigEntry<float> RainbowSpeed;
         internal static ConfigEntry<float> LightIntensity;
-        // internal static ConfigEntry<float> PointIntensity;
-        internal static ConfigEntry<float> LightFactor;
+        // internal static ConfigEntry<float> LightFactor;
         internal static ConfigEntry<float> BeamSize;
+        internal static ConfigEntry<float> PointSize;
         internal static ConfigEntry<float> MaxDist;
-        internal static ConfigEntry<float> LightRange;
+        // internal static ConfigEntry<float> LightRange;
         internal static ConfigEntry<bool> UseCustomMeshVtxs;
 
         private static GameObject _hookObject;
@@ -40,22 +40,20 @@ namespace RGBLasers
             _hookObject.AddComponent<RGBLaserInjector>();
             DontDestroyOnLoad(_hookObject);
 
-            Blue              = Config.Bind("Laser Color", "B", 1f, new ConfigDescription("The blue value.", new AcceptableValueRange<float>(0, 1)));
-            Green             = Config.Bind("Laser Color", "G", 0f, new ConfigDescription("The green value.", new AcceptableValueRange<float>(0, 1)));
-            Red               = Config.Bind("Laser Color", "R", 0f, new ConfigDescription("The red value.", new AcceptableValueRange<float>(0, 1)));
-            Rainbow           = Config.Bind("Laser Color", "Rainbow", false, new ConfigDescription("Rainbow effect (overrides RGB values)."));
-            RainbowSpeed      = Config.Bind("Laser Color", "Rainbow Speed", 1f, new ConfigDescription("The speed of the rainbow effect.", new AcceptableValueRange<float>(0, 2)));
+            Blue = Config.Bind("Laser Color", "B", 1f, new ConfigDescription("The blue value.", new AcceptableValueRange<float>(0, 1)));
+            Green = Config.Bind("Laser Color", "G", 0f, new ConfigDescription("The green value.", new AcceptableValueRange<float>(0, 1)));
+            Red = Config.Bind("Laser Color", "R", 0f, new ConfigDescription("The red value.", new AcceptableValueRange<float>(0, 1)));
+            Rainbow = Config.Bind("Laser Color", "Rainbow", false, new ConfigDescription("Rainbow effect (overrides RGB values)."));
+            RainbowSpeed = Config.Bind("Laser Color", "Rainbow Speed", 1f, new ConfigDescription("The speed of the rainbow effect.", new AcceptableValueRange<float>(0, 2)));
 
-            _                 = Config.Bind("Parameters", "These are the parameters for the LaserBeam class defined by BSG, as such the result of modifying these values may not be what you expect to see.", "");
+            LightIntensity = Config.Bind("Parameters", "Light Intensity", 1f, new ConfigDescription("LightIntensity param. Modifies both beam and point. Very high values will result in glare.", new AcceptableValueRange<float>(1, 20)));
+            // LightFactor = Config.Bind("Parameters", "Intensity Factor", 1f, new ConfigDescription("IntensityFactor param. Does not seem to do anything.", new AcceptableValueRange<float>(1, 100)));
+            MaxDist = Config.Bind("Parameters", "Point Light Distance", 100f, new ConfigDescription("MaxDistance param. This (seems) to adjust the point light size/distance ratio.", new AcceptableValueRange<float>(50, 1000)));
+            // LightRange = Config.Bind("Parameters", "Light Range", 100f, new ConfigDescription("LightRange param.", new AcceptableValueRange<float>(1, 10000)));
 
-            LightIntensity    = Config.Bind("Parameters", "Beam Intensity", 1f, new ConfigDescription("Beam intensity.", new AcceptableValueRange<float>(1, 100)));
-            // PointIntensity    = Config.Bind("Parameters", "Point Light Intensity", 1f, new ConfigDescription("Laser point intensity.", new AcceptableValueRange<float>(1, 100)));
-            BeamSize          = Config.Bind("Parameters", "Beam Size", 1f, new ConfigDescription("Beam size.", new AcceptableValueRange<float>(1, 100)));
-            MaxDist           = Config.Bind("Parameters", "Max Beam Distance", 100f, new ConfigDescription("Max renderable beam distance. Setting this lower typically results in a large point light if beam intensity is high.", new AcceptableValueRange<float>(100, 10000)));
-            LightRange        = Config.Bind("Parameters", "Light Range", 100f, new ConfigDescription("Light range.", new AcceptableValueRange<float>(1, 10000)));
-
-            // LightFactor       = Config.Bind("DEPRECATED", "Intensity Factor", 1f, new ConfigDescription("Beam intensity factor. Does not seem to do anything.", new AcceptableValueRange<float>(1, 100)));
-            // UseCustomMeshVtxs = Config.Bind("DEPRECATED", "Use Custom Mesh Vertices", false, new ConfigDescription("Whether or not to use custom mesh vertices based on configured beam size."));
+            UseCustomMeshVtxs = Config.Bind("Custom", "Use Custom Mesh Vertices", false, new ConfigDescription("Whether or not to use custom mesh vertices."));
+            BeamSize = Config.Bind("Custom", "Beam Size", .002f, new ConfigDescription("BeamSize param used to adjust beam light mesh.", new AcceptableValueRange<float>(0.001f, 0.03f)));
+            PointSize = Config.Bind("Custom", "Point Light Size", 1f, new ConfigDescription("Custom point size parameter used to adjust point light mesh.", new AcceptableValueRange<float>(0f, 50f)));
         }
     }
 
@@ -67,11 +65,13 @@ namespace RGBLasers
         public static List<Mesh> pointMeshes = new List<Mesh>();
         public static List<LaserBeam> beams = new List<LaserBeam>();
         public static List<Mesh> beamMeshes = new List<Mesh>();
-        private static FieldInfo intensityFactorField = typeof(LaserBeam).GetField("IntensityFactor", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        public static Mesh cachedPointMesh;        
+        public static Mesh cachedBeamMesh;
 
         public void Render(Color c)
         {
-            // No lasers to render, ignore this call.
+            // No lasers to render, ignore this call (shouldn't ever happen).
             if (points == null || beams == null || points.Count == 0 || beams.Count == 0)
             {
                 return;
@@ -87,13 +87,13 @@ namespace RGBLasers
             {
                 if (beam == null) { beams.Remove(beam); continue; } // Remove beam if it no longer exists, and skip it.
 
-                beam.LightRange = RGBLasersPlugin.LightRange.Value;
+                // beam.LightRange = RGBLasersPlugin.LightRange.Value;
                 beam.PointMaterial.color = c;
                 beam.BeamMaterial.color = c;
                 beam.LightIntensity = RGBLasersPlugin.LightIntensity.Value;
                 beam.BeamSize = RGBLasersPlugin.BeamSize.Value;
                 beam.MaxDistance = RGBLasersPlugin.MaxDist.Value;
-                intensityFactorField.SetValue(beam, RGBLasersPlugin.LightIntensity.Value);
+                typeof(LaserBeam).GetField("IntensityFactor", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(beam, RGBLasersPlugin.LightIntensity.Value);
             }
 
             foreach (var point in points)
@@ -104,29 +104,58 @@ namespace RGBLasers
                 point.intensity = RGBLasersPlugin.LightIntensity.Value;
                 point.enabled = true;
             }
+        }
 
-            /*
-            if (RGBLasersPlugin.UseCustomMeshVtxs.Value)
+        public static void AdjustMeshes()
+        {
+            // No lasers to render, ignore this call (shouldn't ever happen).
+            if (pointMeshes == null || beamMeshes == null || pointMeshes.Count == 0 || beamMeshes.Count == 0)
             {
-                // mesh_1
-                foreach (var beamMesh in beamMeshes)
-                {
-                    if (beamMesh == null) { beamMeshes.Remove(beamMesh); continue; }
-
-                    beamMesh.vertices = new Vector3[]
-                    {
-                        new Vector3(-RGBLasersPlugin.BeamSize.Value, 0f),
-                        new Vector3(RGBLasersPlugin.BeamSize.Value, 0f),
-                        new Vector3(-RGBLasersPlugin.BeamSize.Value, 1f),
-                        new Vector3(RGBLasersPlugin.BeamSize.Value, 1f)
-                    };
-                    beamMesh.bounds = new Bounds(
-                        new Vector3(RGBLasersPlugin.BeamSize.Value, RGBLasersPlugin.BeamSize.Value, RGBLasersPlugin.MaxDist.Value * 0.5f),
-                        new Vector3(RGBLasersPlugin.BeamSize.Value * 2f, RGBLasersPlugin.BeamSize.Value * 2f, RGBLasersPlugin.MaxDist.Value)
-                    );
-                }
+                return;
             }
-            */
+
+            foreach (var mesh in beamMeshes)
+            {
+                mesh.vertices = new Vector3[]
+                {
+                    new Vector3(-RGBLasersPlugin.BeamSize.Value, 0f),
+                    new Vector3(RGBLasersPlugin.BeamSize.Value, 0f),
+                    new Vector3(-RGBLasersPlugin.BeamSize.Value, 1f),
+                    new Vector3(RGBLasersPlugin.BeamSize.Value, 1f)
+                };
+                mesh.bounds = new Bounds(
+                    new Vector3(RGBLasersPlugin.BeamSize.Value, RGBLasersPlugin.BeamSize.Value, RGBLasersPlugin.MaxDist.Value * 0.5f),
+                    new Vector3(RGBLasersPlugin.BeamSize.Value * 2f, RGBLasersPlugin.BeamSize.Value * 2f, RGBLasersPlugin.MaxDist.Value)
+                );
+            }
+
+            foreach (var mesh in pointMeshes)
+            {
+                mesh.vertices = new Vector3[]
+                {
+                    new Vector3(-RGBLasersPlugin.PointSize.Value, -RGBLasersPlugin.PointSize.Value),
+                    new Vector3(RGBLasersPlugin.PointSize.Value, -RGBLasersPlugin.PointSize.Value),
+                    new Vector3(-RGBLasersPlugin.PointSize.Value, RGBLasersPlugin.PointSize.Value),
+                    new Vector3(RGBLasersPlugin.PointSize.Value, RGBLasersPlugin.PointSize.Value)
+                };
+
+                mesh.RecalculateBounds();
+            }
+        }
+
+        public static void ResetMeshes()
+        {
+            foreach (var mesh in beamMeshes)
+            {
+                mesh.vertices = cachedBeamMesh.vertices;
+                mesh.bounds = cachedBeamMesh.bounds;
+            }
+
+            foreach (var mesh in pointMeshes)
+            {
+                mesh.vertices = cachedPointMesh.vertices;
+                mesh.RecalculateBounds();
+            }
         }
 
         public void Update()
@@ -143,6 +172,15 @@ namespace RGBLasers
                     else
                     {
                         Render(new Color(RGBLasersPlugin.Red.Value, RGBLasersPlugin.Green.Value, RGBLasersPlugin.Blue.Value));
+                    }
+
+                    if (RGBLasersPlugin.UseCustomMeshVtxs.Value)
+                    {
+                        AdjustMeshes();
+                    }
+                    else
+                    {
+                        ResetMeshes();
                     }
                 }
             }
