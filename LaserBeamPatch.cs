@@ -8,7 +8,7 @@ namespace RGBLasers
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(LaserBeam).GetMethod("method_0", BindingFlags.NonPublic | BindingFlags.Instance);
+            return typeof(LaserBeam).GetMethod(nameof(LaserBeam.method_0));
         }
 
         [PatchPostfix]
