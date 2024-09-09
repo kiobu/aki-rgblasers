@@ -1,10 +1,10 @@
-﻿using Aki.Reflection.Patching;
+﻿using SPT.Reflection.Patching;
 using System.Reflection;
 using UnityEngine;
 
 namespace RGBLasers
 {
-    internal class LaserBeamPatch : Aki.Reflection.Patching.ModulePatch
+    internal class LaserBeamPatch : SPT.Reflection.Patching.ModulePatch
     {
         protected override MethodBase GetTargetMethod()
         {

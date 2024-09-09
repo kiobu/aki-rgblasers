@@ -20,7 +20,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\Aki.Reflection\Aki.Reflection.csproj" />
+    <ProjectReference Include="..\SPT.Reflection\SPT.Reflection.csproj" />
   </ItemGroup>
   
   <ItemGroup>
